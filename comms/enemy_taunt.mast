@@ -1,0 +1,135 @@
+#
+# Load taunt data from the json file which contains the current taunts.
+#
+shared taunt_data = load_json_data(get_mission_dir_filename("taunts.json"))
+
+
+
+
+
+//enable/comms if has_role(COMMS_SELECTED_ID, "Raider")
+
+
+//spawn if has_role(SPAWNED_ID, "raider")
+#
+# Select 3 taunts
+#
+race = get_race(SPAWNED_ID)
+if race is None:
+    print(f"spawn, raider invalid race {race}")
+    ->END
+
+race_taunts = taunt_data.get(race)
+if race_taunts is not None:
+    this_taunt_data = random.sample(race_taunts, 3)
+    set_inventory_value(SPAWNED_ID, "taunt_data", this_taunt_data)
+    set_inventory_value(SPAWNED_ID, "taunt_trait", random.randint(0,2))
+   
+
+
+=$raider red,white
+
+//comms if has_roles(COMMS_SELECTED_ID, 'raider') and not has_roles(COMMS_SELECTED_ID, 'surrendered')
++ "Hail":
+    <<[$raider] "Hail"
+        "Go away, {COMMS_SELECTED.name}! You talk too much!
+
++ "Taunt"  handle_comms_taunt_raider_top
+
+
+//comms/taunt/raider
+#
+# Present taunts
+# Taunts are added when the raider spawns 
+# see the above //spawn handler
+#
+name = COMMS_ORIGIN.name
+this_taunt_data = get_inventory_value(COMMS_SELECTED_ID, "taunt_data")
+#
+# Skip if the loading of taunts failed
+#
+yield fail if this_taunt_data is None
+
+taunt_trait=get_inventory_value(COMMS_SELECTED_ID, "taunt_trait")
+right_button = this_taunt_data[taunt_trait]['button']
+
+
+#data_wrap = {"data": data}
+#~~data_wrap["select_right"] = right_button == button_text~~
+
+for data in this_taunt_data:
+    button_text = data["button"]
+    right = right_button == button_text
+    + "{button_text}" handle_comms_taunt_raider_select {"data": data, "select_right": right}
+    
+
+
+
+=== handle_comms_taunt_raider_top ====
+player = to_object(COMMS_ORIGIN_ID)
+yield fail if player is None
+name = to_object(COMMS_ORIGIN_ID).name
+ship_id = COMMS_SELECTED_ID
+ship = to_object(ship_id)
+yield fail if ship is None
+
+fleet_id = get_inventory_value(COMMS_SELECTED_ID, "my_fleet_id")
+fleet_obj = to_object(fleet_id)
+yield fail if fleet_obj is None
+
+enrage_value = fleet_obj.get_heat_for(ship_id)
+this_taunt_data = get_inventory_value(COMMS_SELECTED_ID, "taunt_data")
+
+hide_taunt = this_taunt_data is None or has_role(ship_id, "surrendered")
+if this_taunt_data is None:
+    race = get_race(COMMS_SELECTED_ID)
+    comms_receive(f"""The taunts for this element were not defined properly race expected: {race}.""", title="Taunt coding error", title_color=raider_color)
+
+if enrage_value:
+    comms_receive(f"""I'm too angry to deal with you right now, {name}.""", title="Already angry", title_color=raider_color)
+elif hide_taunt==True:
+    comms_receive(f"""Your taunts are worthless to us, {name}.""", title="Taunt worthless", title_color=raider_color)
+else:
+    comms_navigate("//comms/taunt/raider")
+
+yield success
+
+
+
+
+
+================ handle_comms_taunt_raider_select ==================
+player = to_object(COMMS_ORIGIN_ID)
+yield fail if player is None
+
+name = player.name
+
+# Need to format the data
+msg = data['transmit']
+msg = mast_format_string(msg)
+comms_transmit(f"{msg}", title="taunt", title_color="green")
+# failure
+right = select_right
+if not right:
+    msg = "{data['failure']}"
+    msg = mast_format_string(msg)
+    comms_receive(f"{msg}", title="taunt failed", title_color=raider_color)
+# success == enrage the fleet
+else:
+    msg = "{data['success']}"
+    msg = mast_format_string(msg)
+    comms_receive(f"{msg}", title="taunt succeeded", title_color=raider_color)
+    fleet_id = get_inventory_value(COMMS_SELECTED_ID, "my_fleet_id")
+    fleet_obj = to_object(fleet_id)
+    if fleet_obj:
+        fleet_obj.make_enraged_by(COMMS_ORIGIN_ID)    
+#
+# Return to top menu
+#
+comms_navigate("")
+#
+# Clear the taunt data, only can taunt once
+#
+set_inventory_value(COMMS_SELECTED_ID, "taunt_data", None)
+yield success
+
