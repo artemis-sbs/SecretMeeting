@@ -1,0 +1,48 @@
+shared phoenix_id = None
+
+@map/secretmeeting "Secret Meeting"
+" The ambassadors are meeting secretly at starbase Phoenix, a base hidden in an asteroid field.
+
+# phoenix starbase ----------------------------------------------------------------------------------------------------
+station_object = npc_spawn(0,0,0, "Starbase Phoenix", "tsn, station", "starbase_civil", "behav_station")
+phoenix_id = to_id(station_object)
+#apos = station_object.engine_object.pos
+set_face(phoenix_id, random_terran(civilian=True)) # station face
+
+
+# player ship ----------------------------------------------------------------------------------------------------
+await task_schedule (spawn_players)
+
+
+# big asteroid field  ----------------------------------------------------------------------------------------------------
+
+asteroid_types = ship_data_plain_asteroid_keys()
+
+cluster_spawn_points = scatter_box(200,  0,0,0, 10000,1000,10000, True)
+
+for v2 in cluster_spawn_points:
+    a_type = random.choice(asteroid_types)
+
+    asteroid = terrain_spawn(v2.x, v2.y, v2.z,None, "#,asteroid", a_type, "behav_asteroid")
+    asteroid.engine_object.steer_yaw = random.uniform(0.0001, 0.003)
+    asteroid.engine_object.steer_pitch = -random.uniform(0.0001, 0.003)
+    asteroid.engine_object.steer_roll = random.uniform(0.0001, 0.003)
+
+    sx = random.uniform(1.0,2.0) + 3
+    sy = sx
+    sz = sx
+    sm = max(sx, sy)
+    sm = max(sm, sz)
+#    er = asteroid.blob.get("exclusionradius",0)
+#    er *= sm
+
+    asteroid.blob.set("local_scale_x_coeff", sx)
+    asteroid.blob.set("local_scale_y_coeff", sy)
+    asteroid.blob.set("local_scale_z_coeff", sz)
+ #   asteroid.blob.set("exclusionradius", er * 2)
+        
+
+
+#------------------------------------------------------------------------------------------------------------
+
+task_schedule(ambassador_behavior)

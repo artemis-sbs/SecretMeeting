@@ -1,0 +1,231 @@
+
+
+//spawn if has_roles(SPAWNED_ID, "tsn,fighter")
+
+#
+# Create the interior for the ship, defined in grid_ai
+#
+# force create hullmap
+#task_schedule(spawn_grid_objects)
+#
+# The remaining AI for the player is docking
+#
+set_inventory_value(SPAWNED_ID, "briefing", "This is the start of a fighter mission")
+
+->END
+
+
+//spawn if has_roles(SPAWNED_ID, "tsn,shuttle")
+
+#
+# Create the interior for the ship, defined in grid_ai
+#
+# force create hullmap
+#task_schedule(spawn_grid_objects)
+#
+# The remaining AI for the player is docking
+#
+set_inventory_value(SPAWNED_ID, "briefing", "This is the start of a shuttle mission")
+docked_with = get_dedicated_link(SPAWNED_ID, "home_dock")
+
+
+if random.randint(0,4) == 2:
+    jump story_mission_investigate
+else:
+    jump story_mission_deliver_to_player if has_role(docked_with, "station")
+    jump story_mission_deliver_to_station has_role(docked_with, "__player__")
+
+
+->END
+
+
+=====  story_mission_deliver_to_player =====
+# SPAWNED_ID assumed
+
+so = to_object(SPAWNED_ID)
+->END if so is None
+side = so.side
+so = None # no longer needed
+
+mission_types = ["ammunition"] #, "upgrade"]
+mission_type = random.choice(range(len(mission_types)))
+
+# get player on my side, and exclude me
+COMMS_ORIGIN_ID = SPAWNED_ID
+COMMS_SELECTED_ID = random_id(role(get_side(SPAWNED_ID)) & role("__player__") - to_set(SPAWNED_ID))
+
+jump story_mission_deliver_ammo if mission_type ==0
+
+->END
+
+
+=====  story_mission_deliver_ammo =====
+# Expects COMMS_ORIGIN_ID and COMMS_SELECTED_ID
+#
+# The remaining AI for the player is docking
+#
+sel_o = to_object(COMMS_SELECTED_ID)
+->END if sel_o is None
+
+origin_o = to_object(COMMS_ORIGIN_ID)
+->END if origin_o is None
+
+_torp_types = origin_o.data_set.get("torpeo_types_available",0)
+# 
+# 
+#
+if  _torp_types is None:
+     print("torpedo mission not needed")
+     ->END
+_torp_types = _torp_types.split(",")
+torp_type = random.choice(len(_torp_types))
+amount = random.randint(2, 6-torp_type)
+torp_name = _torp_types[torp_type].strip()
+
+
+set_inventory_value(SPAWNED_ID, "briefing", f"Deliver {torp_name} to {sel_o.name}^Take the {amount} {torp_name} and delivery them to {sel_o.name}.")
+sel_o = None # free
+
+==== story_mission_deliver_ammo_travel ====
+
+await delay_sim(seconds=5)
+# END tesk if things no longer exist
+->END if to_object(COMMS_ORIGIN_ID) is None # If in standby it won't 'exist'
+->END if not object_exists(COMMS_SELECTED_ID)
+
+# Must be docked
+jump story_mission_deliver_ammo_travel if not has_role(COMMS_ORIGIN_ID, "standby")
+# must be docked at expected location
+jump story_mission_deliver_ammo_travel if get_dedicated_link(COMMS_ORIGIN_ID, "home_dock") != COMMS_SELECTED_ID
+
+# Get the current load
+current_load = get_data_set_value(COMMS_SELECTED_ID, f"{torp_type}_NUM", 0)
+# Add the torps
+set_data_set_value(COMMS_SELECTED_ID, f"{torp_type}_NUM", amount + current_load, 0)
+
+
+jump hangar_handle_route_spawn
+
+->END
+
+=====  story_mission_deliver_to_station =====
+# SPAWNED_ID assumed
+
+so = to_object(SPAWNED_ID)
+->END if so is None
+side = so.side
+so = None # no longer needed
+
+mission_types = ["ammunition"] #, "upgrade"]
+mission_type = random.choice(range(len(mission_types)))
+
+# get player on my side, and exclude me
+COMMS_ORIGIN_ID = SPAWNED_ID
+COMMS_SELECTED_ID = random_id(role(get_side(SPAWNED_ID)) & role("station") - to_set(SPAWNED_ID))
+
+jump story_mission_deliver_life_form if mission_type ==0
+
+->END
+
+
+
+=====  story_mission_deliver_life_form =====
+# Expects COMMS_ORIGIN_ID and COMMS_SELECTED_ID
+
+sel_o = to_object(COMMS_SELECTED_ID)
+->END if sel_o is None
+
+life_forms = ["Admiral Xeno Nakada", "Prince Zayne Alcantar", "Admiral Tharay sh'Firri", "Skarran delegate", "Torgoth delegate"]
+
+life_form_name = random.choice(life_forms)
+
+set_inventory_value(SPAWNED_ID, "briefing", f"Deliver {life_form_name} to {sel_o.name}^Take the {life_form_name} and delivery them to {sel_o.name}.")
+sel_o = None # free
+
+==== story_mission_deliver_life_form_travel ====
+
+await delay_sim(seconds=5)
+
+# END task if things no longer exist
+->END if to_object(COMMS_ORIGIN_ID) is None # If in standby it won't 'exist'
+->END if not object_exists(COMMS_SELECTED_ID)
+
+
+# Must be docked
+jump story_mission_deliver_life_form_travel if not has_role(COMMS_ORIGIN_ID, "standby")
+# must be docked at expected location
+jump story_mission_deliver_life_form_travel if get_dedicated_link(COMMS_ORIGIN_ID, "home_dock") != COMMS_SELECTED_ID
+
+# Get the current load
+print("life form delivered")
+
+jump hangar_handle_route_spawn
+
+->END
+
+
+=====  story_mission_investigate =====
+# SPAWNED_ID assumed
+
+so = to_object(SPAWNED_ID)
+->END if so is None
+side = so.side
+
+
+mission_types = ["ammunition"] #, "upgrade"]
+mission_type = random.choice(range(len(mission_types)))
+
+# get player on my side, and exclude me
+COMMS_ORIGIN_ID = SPAWNED_ID
+COMMS_SELECTED_ID = random_id(role(get_side(SPAWNED_ID)) & role("__player__") - to_set(SPAWNED_ID))
+
+stations = role("station")
+station = random.choice(list(stations))
+set_inventory_value(SPAWNED_ID, "briefing", f"Mission patrol stations. Visit all of the stations then dock.")
+idx = 0
+for st in stations:
+    st_obj = to_object(st)
+    continue if st_obj is None
+    pos= st_obj.engine_object.pos
+    so.data_set.set("waypoint_x_array", pos.x, idx)
+    so.data_set.set("waypoint_y_array", pos.y, idx)
+    so.data_set.set("waypoint_z_array", pos.z, idx)
+    so.data_set.set("waypoint_name_array", st_obj.name, idx)
+    idx += 1
+
+so.data_set.set("waypoint_count", idx, 0)
+print(f"start waypoint count {idx}")
+
+so = None # no longer needed
+
+==== story_mission_investigate_loop ===
+
+await delay_sim(seconds=5)
+
+so = to_object(SPAWNED_ID)
+->END if so is None
+jump story_mission_investigate_loop if has_role(SPAWNED_ID, "standby")
+
+near_station = broad_test_around(COMMS_ORIGIN_ID, 1000, 1000, 1) & stations
+jump story_mission_investigate_loop if len(near_station) == 0
+
+for st in near_station:
+    stations.discard(st)
+    print("discarded station")
+
+idx = 0
+for st in stations:
+    st_obj = to_object(st)
+    continue if st_obj is None
+    pos= st_obj.engine_object.pos
+    so.data_set.set("waypoint_x_array", pos.x, idx)
+    so.data_set.set("waypoint_y_array", pos.y, idx)
+    so.data_set.set("waypoint_z_array", pos.z, idx)
+    so.data_set.set("waypoint_name_array", st_obj.name, idx)
+    idx += 1
+so.data_set.set("waypoint_count", idx, 0)
+print(f"waypoint count {idx}")
+
+jump  story_mission_investigate_loop if len(stations)!=0
+so = None
+->END
