@@ -1,4 +1,4 @@
-# Secret Mission
+# Secret Meeting
 An Artemis: Cosmos mission.
 
 Written written using MAST (Multi-agent story telling).
