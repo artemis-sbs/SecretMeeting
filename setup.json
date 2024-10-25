@@ -3,7 +3,7 @@
     "operator_mode": {
         "enable": false,
         "logo": "media/operator",
-        "remote_console_select": true,
+        "remote_console_select": false,
         "pin": "000000"
     },
     "players_count": 1,
@@ -15,7 +15,8 @@
     "friendly_select": "few",
     "monster_select": "few",
     "upgrade_select": "lots",
-    "game_time_limit": 0,
+    "game_time_limit": 20,
+    "war_time_delay": 10,
     "player_ships": [
         {
             "name": "Artemis",
