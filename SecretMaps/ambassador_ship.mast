@@ -6,211 +6,212 @@
 #------------------------------------------------------------------------------------------------------------
 
 ======= ambassador_behavior ======= 
-amb_id = npc_spawn(100, 0, -2000, "Praetor of Peace", "Ambassador", "tsn_warpster", "behav_npcship")
-amb_id = to_id(amb_id)
-amb_obj = to_object(amb_id)
-amb_obj.data_set.set("ally_list","tsn,good_dudes",0)
-set_face(amb_id, random_terran(civilian=False)) # ambassador face
+	amb_id = npc_spawn(100, 0, -2000, "Praetor of Peace", "Ambassador", "tsn_warpster", "behav_npcship")
+	amb_id = to_id(amb_id)
+	amb_obj = to_object(amb_id)
+	amb_obj.data_set.set("ally_list","tsn,good_dudes",0)
+	set_face(amb_id, random_terran(civilian=False)) # ambassador face
 
-await delay_sim(5)
+	await delay_sim(5)
 
-print (player_list)
+	print (player_list)
 
-end_game_delay = 5
+	end_game_delay = 5
 
-# face of admiral
-admiral_face =  random_terran(civilian=False)
-admiral_face =  "ter #964b00 8 1;ter #968b00 3 0;ter #968b00 4 0;ter #968b00 5 2;ter #fff 3 5;ter #964b00 8 4;"
+	# face of admiral
+	admiral_face =  random_terran(civilian=False)
+	admiral_face =  "ter #964b00 8 1;ter #968b00 3 0;ter #968b00 4 0;ter #968b00 5 2;ter #fff 3 5;ter #964b00 8 4;"
 
-# tell it where to go (the station)
-target_pos(amb_id, 0,0,0, 1.0, 0, 200)
+	# tell it where to go (the station)
+	target_pos(amb_id, 0,0,0, 1.0, 0, 200)
 
-# announcement from admiral
-send_general_message("Admiral Harkin", "The Praetor of Peace has arrived.  Escort it to the starbase.", admiral_face, phoenix_id)
+	# announcement from admiral
+	send_general_message("Admiral Harkin", "The Praetor of Peace has arrived.  Escort it to the starbase.", admiral_face, phoenix_id)
 
-# wait for ambassador ship to get to its destination
+	# wait for ambassador ship to get to its destination
+
 --- wait_for_arrival ---
 
-dist = sbs.distance_id(phoenix_id, amb_id)
-if dist > 400:
-	await delay_sim(5)
-	jump wait_for_arrival
+	dist = sbs.distance_id(phoenix_id, amb_id)
+	if dist > 400:
+		await delay_sim(5)
+		jump wait_for_arrival
 
-# now the ambassadors ship has arrived
-meeting_len = int(game_time_limit)
-send_general_message("Admiral Harkin", f"Praetor of Peace has docked.  The meeting should take {meeting_len} minutes.  Your mission is to protect it until then.", admiral_face, phoenix_id)
+	# now the ambassadors ship has arrived
+	meeting_len = int(game_time_limit)
+	send_general_message("Admiral Harkin", f"Praetor of Peace has docked.  The meeting should take {meeting_len} minutes.  Your mission is to protect it until then.", admiral_face, phoenix_id)
 
-set_timer(0, "meeting_count", minutes=meeting_len)
-#fine_counter = 0
-#min_passed = 0
+	set_timer(0, "meeting_count", minutes=meeting_len)
+	#fine_counter = 0
+	#min_passed = 0
 
-# inital skarran attack
-print (f"difficulty {difficulty}")
-fleet_diff = int(difficulty-1)
-print (f"diff value {fleet_diff}")
+	# inital skarran attack
+	print (f"difficulty {difficulty}")
+	fleet_diff = int(difficulty-1)
+	print (f"diff value {fleet_diff}")
 
 
-fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
-
-fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
-
-if difficulty >= 11:
-	fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
 	fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
 	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
 
+	fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
+	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
 
-seconds_between_waves = 300
-milestone = meeting_len*60-seconds_between_waves
-min_left = meeting_len
+	if difficulty >= 11:
+		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
+		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
+		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+
+
+	seconds_between_waves = 300
+	milestone = meeting_len*60-seconds_between_waves
+	min_left = meeting_len
 
 --- meeting_in_progress ---
-await delay_sim(5)
-seconds = get_time_remaining(0,"meeting_count")
+	await delay_sim(5)
+	seconds = get_time_remaining(0,"meeting_count")
 
-player_object_set = to_object_list(role("__player__"))
+	player_object_set = to_object_list(role("__player__"))
 
-if len(player_object_set) <=0:
-	textLine = "The TSN defenders have been destroyed!  God help the ambassador."
-	send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-	start_text = "The TSN defenders have been destroyed."
-	jump game_lost
+	if len(player_object_set) <=0:
+		textLine = "The TSN defenders have been destroyed!  God help the ambassador."
+		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
+		start_text = "The TSN defenders have been destroyed."
+		jump game_lost
 
-#check for loss conditions
-player_obj = player_object_set[0]
-player_name = player_obj.name
+	#check for loss conditions
+	player_obj = player_object_set[0]
+	player_name = player_obj.name
 
-if not object_exists(amb_id):
-	textLine = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
-	send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-	start_text = "Praetor of Peace has been destroyed."
-	jump game_lost
+	if not object_exists(amb_id):
+		textLine = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
+		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
+		start_text = "Praetor of Peace has been destroyed."
+		jump game_lost
 
-if not object_exists(phoenix_id):
-	textLine = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
-	send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-	start_text = "Starbase Phoenix has been destroyed."
-	jump game_lost
+	if not object_exists(phoenix_id):
+		textLine = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
+		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
+		start_text = "Starbase Phoenix has been destroyed."
+		jump game_lost
 
 
 
-# every 5 minutes
-if seconds < milestone:           # if 5 minutes have passed
-	min_left -= 5 #format_time_remaining(0,"meeting_count")
-	textLine = "The meeting should take another {min_left} minutes."
-	send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
+	# every 5 minutes
+	if seconds < milestone:           # if 5 minutes have passed
+		min_left -= 5 #format_time_remaining(0,"meeting_count")
+		textLine = "The meeting should take another {min_left} minutes."
+		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
 
-	#another skarran arrives
-	fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
-	fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+		#another skarran arrives
+		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
+		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
+		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
 
-	milestone -= seconds_between_waves
+		milestone -= seconds_between_waves
 
-jump meeting_in_progress if not is_timer_finished(0,"meeting_count")
+	jump meeting_in_progress if not is_timer_finished(0,"meeting_count")
 
 --- meeting_adjourned ---
-textLine = "Praetor of Peace is leaving.  Protect it until it gets clear of the asteroid field."
-send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
+	textLine = "Praetor of Peace is leaving.  Protect it until it gets clear of the asteroid field."
+	send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
 
-#Tell ship to move south
-target_pos(amb_id, 0,0,-5200, 1.0, 0, 0)
+	#Tell ship to move south
+	target_pos(amb_id, 0,0,-5200, 1.0, 0, 0)
 
-# spawn one more skarran to harri the ship
-fleet_pos = Vec3(0,0,-2500)
-create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
-fleet_pos = Vec3(1000,0,-2500)
-create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+	# spawn one more skarran to harri the ship
+	fleet_pos = Vec3(0,0,-2500)
+	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+	fleet_pos = Vec3(1000,0,-2500)
+	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
 
 
 --- escaping ---
-await delay_sim(2)
+	await delay_sim(2)
 
-#check for loss conditions
-player_object_set = to_object_list(role("__player__"))
+	#check for loss conditions
+	player_object_set = to_object_list(role("__player__"))
 
-if len(player_object_set) <=0:
-	textLine = "The TSN defenders have been destroyed!  God help the ambassador."
+	if len(player_object_set) <=0:
+		textLine = "The TSN defenders have been destroyed!  God help the ambassador."
+		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
+		start_text = "The TSN defenders have been destroyed."
+		jump game_lost
+
+	player_obj = player_object_set[0]
+	player_name = player_obj.name
+
+	if not object_exists(amb_id):
+		textLine = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
+		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
+		start_text = "Praetor of Peace has been destroyed."
+		jump game_lost
+
+	if not object_exists(phoenix_id):
+		textLine = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
+		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
+		start_text = "Starbase Phoenix has been destroyed."
+		jump game_lost
+
+
+	fleet_pos = Vec3(0,0,-5200)
+	ship_pos = Vec3(0,0,0)
+	amb_obj = to_object(amb_id)
+	if not amb_obj is None:
+		ship_pos = amb_obj.pos
+
+	diff = fleet_pos - ship_pos
+	jump escaping if diff.length() > 400
+
+
+	#ship is now far enough away from base
+	textLine = "Praetor of Peace has left! Well done."
 	send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-	start_text = "The TSN defenders have been destroyed."
-	jump game_lost
 
-player_obj = player_object_set[0]
-player_name = player_obj.name
+	#accelerate ship to "warp/leave"
+	amb_obj = to_object(amb_id)
+	target_pos(amb_id, 0,0,-55200, 50, 0, 0)
+	# win!
 
-if not object_exists(amb_id):
-	textLine = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
-	send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-	start_text = "Praetor of Peace has been destroyed."
-	jump game_lost
-
-if not object_exists(phoenix_id):
-	textLine = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
-	send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-	start_text = "Starbase Phoenix has been destroyed."
-	jump game_lost
-
-
-fleet_pos = Vec3(0,0,-5200)
-ship_pos = Vec3(0,0,0)
-amb_obj = to_object(amb_id)
-if not amb_obj is None:
-	ship_pos = amb_obj.pos
-
-diff = fleet_pos - ship_pos
-jump escaping if diff.length() > 400
-
-
-#ship is now far enough away from base
-textLine = "Praetor of Peace has left! Well done."
-send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-
-#accelerate ship to "warp/leave"
-amb_obj = to_object(amb_id)
-target_pos(amb_id, 0,0,-55200, 50, 0, 0)
-# win!
-
-jump game_won
+	jump game_won
 
 
 --- game_lost ---
 
-#delay a bit
-await delay_sim(2)
-end_game_delay -= 1
-jump game_lost if end_game_delay > 0
+	#delay a bit
+	await delay_sim(2)
+	end_game_delay -= 1
+	jump game_lost if end_game_delay > 0
 
-# do the end screen
-game_started = False
-game_ended = True
+	# do the end screen
+	game_started = False
+	game_ended = True
 
-sbs.play_music_file(0,"music/default/failure")
-signal_emit("show_game_results", None)
-#gui_reroute_clients(show_game_results)
-#gui_reroute_server(show_game_results)
-->END
+	sbs.play_music_file(0,"music/default/failure")
+	signal_emit("show_game_results", None)
+	#gui_reroute_clients(show_game_results)
+	#gui_reroute_server(show_game_results)
+	->END
 
 --- game_won ---
 
-#delay a bit
-await delay_sim(2)
-end_game_delay -= 1
-jump game_won if end_game_delay > 0
+	#delay a bit
+	await delay_sim(2)
+	end_game_delay -= 1
+	jump game_won if end_game_delay > 0
 
-# do the end screen
-start_text = "The mission is complete, and Praetor of Peace escaped.  Congratuations!"
-game_started = False
-game_ended = True
+	# do the end screen
+	start_text = "The mission is complete, and Praetor of Peace escaped.  Congratuations!"
+	game_started = False
+	game_ended = True
 
-sbs.play_music_file(0,"music/default/victory")
-signal_emit("show_game_results", None)
-#gui_reroute_clients(show_game_results)
-#gui_reroute_server(show_game_results)
-->END
+	sbs.play_music_file(0,"music/default/victory")
+	signal_emit("show_game_results", None)
+	#gui_reroute_clients(show_game_results)
+	#gui_reroute_server(show_game_results)
+	->END
 
-#------------------------------------------------------------------------------------------------------------
+	#------------------------------------------------------------------------------------------------------------
 
