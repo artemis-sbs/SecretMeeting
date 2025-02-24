@@ -2,6 +2,13 @@ shared phoenix_id = None
 
 @map/secretmeeting "Secret Meeting"
 " The ambassadors are meeting secretly at starbase Phoenix, a base hidden in an asteroid field.
+metadata:``` yaml
+Properties:
+    Player Ships: 'gui_int_slider("$text:int;low: 1.0;high:8.0;", var= "player_count")'
+    Difficulty: 'gui_int_slider("$text:int;low: 1.0;high:11.0;", var= "difficulty")'
+    Meeting Length:  'gui_input("desc: Minutes;", var="game_time_limit")'
+```
+
 
 # phoenix starbase ----------------------------------------------------------------------------------------------------
 station_object = npc_spawn(0,0,0, "Starbase Phoenix", "tsn, station", "starbase_civil", "behav_station")
