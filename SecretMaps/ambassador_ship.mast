@@ -14,9 +14,9 @@
 
 	await delay_sim(5)
 
-	print (player_list)
+	print (PLAYER_LIST)
 
-	end_game_delay = 5
+	END_GAME_DELAY = 5
 
 	# face of admiral
 	admiral_face =  random_terran(civilian=False)
@@ -38,7 +38,7 @@
 		jump wait_for_arrival
 
 	# now the ambassadors ship has arrived
-	meeting_len = int(game_time_limit)
+	meeting_len = int(GAME_TIME_LIMIT)
 	send_general_message("Admiral Harkin", f"Praetor of Peace has docked.  The meeting should take {meeting_len} minutes.  Your mission is to protect it until then.", admiral_face, phoenix_id)
 
 	set_timer(0, "meeting_count", minutes=meeting_len)
@@ -46,8 +46,8 @@
 	#min_passed = 0
 
 	# inital skarran attack
-	print (f"difficulty {difficulty}")
-	fleet_diff = int(difficulty-1)
+	print (f"DIFFICULTY {DIFFICULTY}")
+	fleet_diff = int(DIFFICULTY-1)
 	print (f"diff value {fleet_diff}")
 
 
@@ -57,7 +57,7 @@
 	fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
 	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
 
-	if difficulty >= 11:
+	if DIFFICULTY >= 11:
 		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
 		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
 		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
@@ -77,7 +77,7 @@
 	if len(player_object_set) <=0:
 		textLine = "The TSN defenders have been destroyed!  God help the ambassador."
 		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-		start_text = "The TSN defenders have been destroyed."
+		START_TEXT = "The TSN defenders have been destroyed."
 		jump game_lost
 
 	#check for loss conditions
@@ -87,13 +87,13 @@
 	if not object_exists(amb_id):
 		textLine = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
 		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-		start_text = "Praetor of Peace has been destroyed."
+		START_TEXT = "Praetor of Peace has been destroyed."
 		jump game_lost
 
 	if not object_exists(phoenix_id):
 		textLine = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
 		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-		start_text = "Starbase Phoenix has been destroyed."
+		START_TEXT = "Starbase Phoenix has been destroyed."
 		jump game_lost
 
 
@@ -137,7 +137,7 @@
 	if len(player_object_set) <=0:
 		textLine = "The TSN defenders have been destroyed!  God help the ambassador."
 		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-		start_text = "The TSN defenders have been destroyed."
+		START_TEXT = "The TSN defenders have been destroyed."
 		jump game_lost
 
 	player_obj = player_object_set[0]
@@ -146,13 +146,13 @@
 	if not object_exists(amb_id):
 		textLine = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
 		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-		start_text = "Praetor of Peace has been destroyed."
+		START_TEXT = "Praetor of Peace has been destroyed."
 		jump game_lost
 
 	if not object_exists(phoenix_id):
 		textLine = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
 		send_general_message("Admiral Harkin", textLine, admiral_face, phoenix_id)
-		start_text = "Starbase Phoenix has been destroyed."
+		START_TEXT = "Starbase Phoenix has been destroyed."
 		jump game_lost
 
 
@@ -182,12 +182,12 @@
 
 	#delay a bit
 	await delay_sim(2)
-	end_game_delay -= 1
-	jump game_lost if end_game_delay > 0
+	END_GAME_DELAY -= 1
+	jump game_lost if END_GAME_DELAY > 0
 
 	# do the end screen
-	game_started = False
-	game_ended = True
+	GAME_STARTED = False
+	GAME_ENDED = True
 
 	sbs.play_music_file(0,"music/default/failure")
 	signal_emit("show_game_results", None)
@@ -199,13 +199,13 @@
 
 	#delay a bit
 	await delay_sim(2)
-	end_game_delay -= 1
-	jump game_won if end_game_delay > 0
+	END_GAME_DELAY -= 1
+	jump game_won if END_GAME_DELAY > 0
 
 	# do the end screen
-	start_text = "The mission is complete, and Praetor of Peace escaped.  Congratuations!"
-	game_started = False
-	game_ended = True
+	START_TEXT = "The mission is complete, and Praetor of Peace escaped.  Congratuations!"
+	GAME_STARTED = False
+	GAME_ENDED = True
 
 	sbs.play_music_file(0,"music/default/victory")
 	signal_emit("show_game_results", None)
