@@ -14,7 +14,7 @@ def send_general_message(nName, textLine, face, srcID):
 
 #    print(f"main screen client count = {len(main_screen_client_list)}")
     for c in main_screen_client_list:
-        print(c.client_id)
+        # print(c.client_id)
         sbs.send_story_dialog(c.client_id, nName, textLine, face, "#444")
 
     # send it to all comms players as well

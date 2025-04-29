@@ -14,7 +14,7 @@
 
 	await delay_sim(5)
 
-	print (PLAYER_LIST)
+	#print (PLAYER_LIST)
 
 	END_GAME_DELAY = 5
 
@@ -36,32 +36,34 @@
 	if dist > 400:
 		await delay_sim(5)
 		jump wait_for_arrival
-
+	
 	# now the ambassadors ship has arrived
 	meeting_len = int(GAME_TIME_LIMIT)
+
 	send_general_message("Admiral Harkin", f"Praetor of Peace has docked.  The meeting should take {meeting_len} minutes.  Your mission is to protect it until then.", admiral_face, phoenix_id)
+
 
 	set_timer(0, "meeting_count", minutes=meeting_len)
 	#fine_counter = 0
 	#min_passed = 0
 
 	# inital skarran attack
-	print (f"DIFFICULTY {DIFFICULTY}")
+	#print (f"DIFFICULTY {DIFFICULTY}")
 	fleet_diff = int(DIFFICULTY-1)
-	print (f"diff value {fleet_diff}")
+	#print (f"diff value {fleet_diff}")
 
 
 	fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+	prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 
 	fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+	prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 
 	if DIFFICULTY >= 11:
 		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+		prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+		prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 
 
 	seconds_between_waves = 300
@@ -71,6 +73,7 @@
 --- meeting_in_progress ---
 	await delay_sim(5)
 	seconds = get_time_remaining(0,"meeting_count")
+	#print(f"SECONDS {seconds}")
 
 	player_object_set = to_object_list(role("__player__"))
 
@@ -106,9 +109,9 @@
 
 		#another skarran arrives
 		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+		prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 		fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-		create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+		prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 
 		milestone -= seconds_between_waves
 
@@ -123,9 +126,9 @@
 
 	# spawn one more skarran to harri the ship
 	fleet_pos = Vec3(0,0,-2500)
-	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+	prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 	fleet_pos = Vec3(1000,0,-2500)
-	create_siege_fleet("Skaraan", fleet_diff, fleet_pos.x, fleet_pos.y, fleet_pos.z)
+	prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 
 
 --- escaping ---
