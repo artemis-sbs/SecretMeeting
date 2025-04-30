@@ -19,7 +19,8 @@
         "artemis-sbs.LegendaryMissions.science_scans.v1.0.7.mastlib",
         "artemis-sbs.LegendaryMissions.side_missions.v1.0.7.mastlib",
         "artemis-sbs.LegendaryMissions.upgrades.v1.0.7.mastlib",
-        "artemis-sbs.LegendaryMissions.zadmiral.v1.0.7.mastlib"
+        "artemis-sbs.LegendaryMissions.gamemaster.v1.0.7.mastlib",
+        "artemis-sbs.LegendaryMissions.gamemaster_comms.v1.0.7.mastlib"
     ]
 }
 
