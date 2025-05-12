@@ -22,6 +22,8 @@ shared phoenix_id = None
 #
 # This makes the map available to the game start UI
 #    The properties section is for properties for this map
+#    Notice their are properties PLAYER_COUNT, DIFFICULTY, and GAME_TIME_LIMIT
+#    These are available to this script and they're used below
 #
 @map/secretmeeting "Secret Meeting"
 " The ambassadors are meeting secretly at starbase Phoenix, a base hidden in an asteroid field.
@@ -38,11 +40,11 @@ Properties:
 ## phoenix starbase 
     station_object = npc_spawn(0,0,0, "Starbase Phoenix", "tsn, station", "starbase_civil", "behav_station")
     phoenix_id = to_id(station_object)
-    #apos = station_object.engine_object.pos
-    set_face(phoenix_id, random_terran(civilian=True)) # station face
+## Station face for comms
+    set_face(phoenix_id, random_terran(civilian=True)) 
 
 
-## player ships 
+## player ships (These are from addons)
     await task_schedule(spawn_players)
     await task_schedule(docking_standard_player_station)
 
@@ -50,7 +52,6 @@ Properties:
 ## big asteroid field
 
     asteroid_types = ship_data_plain_asteroid_keys()
-
     cluster_spawn_points = scatter_box(200,  0,0,0, 10000,1000,10000, True)
 
     for v2 in cluster_spawn_points:
@@ -87,22 +88,24 @@ Properties:
 
 
 
-# Create Ambassador hip
+## Create Ambassador ship
     amb_id = npc_spawn(100, 0, -2000, "Praetor of Peace", "Ambassador", "tsn_warpster", "behav_npcship")
     amb_id = to_id(amb_id)
     amb_obj = to_object(amb_id)
     amb_obj.data_set.set("ally_list","tsn,good_dudes",0)
-    set_face(amb_id, random_terran(civilian=False)) # ambassador face
-
+## ambassador face
+    set_face(amb_id, random_terran(civilian=False)) 
+## wait 5 seconds
     await delay_sim(5)
 
 #######################
 # Start of game logic
 
+## time between waves 1/4 of the game time limit
     END_GAME_DELAY = max(1,int(GAME_TIME_LIMIT) // 4)
 
-## face of admiral
-    #admiral_face =  random_terran(civilian=False)
+## face of admiral and name
+## shared make the value available to all tasks the server and all consoles
     shared admiral_face =  "ter #964b00 8 1;ter #968b00 3 0;ter #968b00 4 0;ter #968b00 5 2;ter #fff 3 5;ter #964b00 8 4;"
     shared admiral_name = "Admiral Harkin"
 
@@ -113,7 +116,8 @@ Properties:
     await task_schedule(send_admiral_message, {"the_message": "The Praetor of Peace has arrived.  Escort it to the starbase."})
 
 #######
-
+# Waiting for the ambassador ship to get 
+# close to the station (400m)
 
 --- wait_for_arrival ---
 # wait for ambassador ship to get to its destination
@@ -131,15 +135,21 @@ Properties:
 
     set_timer(0, "meeting_count", minutes=meeting_len)
 
-## spawn inital skarran attack
+## spawn initial skarran attack
+## 2 ships, 4 if difficulty is 11
     fleet_diff = int(DIFFICULTY-1)
 
+
+## prefab_spawn creates calls a label
+## with the data passed
+## prefabs typically create one or more Agents
+## In this case a fleet
     fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
     prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 
     fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
     prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
-
+## More if difficulty 11
     if DIFFICULTY >= 11:
         fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
         prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
@@ -150,32 +160,54 @@ Properties:
     milestone = meeting_len*60-seconds_between_waves
     min_left = meeting_len
 
-
+###########################
+## Now transition to a loop
+## Watching for the meeting to end 
+## or any end game conditions
 --- meeting_in_progress ---
 
     await delay_sim(5)
 ## Wake up every 5 seconds to check this
     seconds = get_time_remaining(0,"meeting_count")
-
+##
+## Important point: The function role
+## returns a set of ids of things with that role
+## roles are a fast way to ask questions
+## This scrip ask simple ones "all the player ships" 
+## i.e. role("__player__")
+##
+## These function convert things to a Agent objects
+##  to_object   - for a single id to and agent
+##  to_object_list - a list/set of IDs a list of agents
+##  Agent objects in this case SpaceObject agents
     player_object_set = to_object_list(role("__player__"))
 ## Check for end of game conditions
+## Failing these will end the game immediately
+##
 ### do we still have players
+### So if the role function returned an empty set
+### There are no more players
     if len(player_object_set) <=0:
         the_message = "The TSN defenders have been destroyed!  God help the ambassador."
         await task_schedule(send_admiral_message, {"the_message": the_message})
+## START_TEXT is a shared variable used by the start and end screen
+## kind of magic variable 
         START_TEXT = "The TSN defenders have been destroyed."
         jump game_lost
 
-### do we still have ambassador's ship
+## Get the player ships name
+## It uses just the first ship if more than one 
     player_obj = player_object_set[0]
     player_name = player_obj.name
-
+### do we still have ambassador's ship
+## object_exists is one way to see if the item is still around
     if not object_exists(amb_id):
         the_message = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
         await task_schedule(send_admiral_message, {"the_message": the_message})
         START_TEXT = "Praetor of Peace has been destroyed."
         jump game_lost
 ### do we still have the station
+
     if not object_exists(phoenix_id):
         the_message = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
         await task_schedule(send_admiral_message, {"the_message": the_message})
@@ -183,8 +215,9 @@ Properties:
         jump game_lost
 
 
-## Is it time to launch a new set of enemies
+## Is it time to launch a new wave of enemies
 ### every cycle 1/4 of total game time
+### e.g. 20 minute game each wave is 5 minutes
     if seconds < milestone:           
         min_left -= END_GAME_DELAY
         if min_left >0:
@@ -201,22 +234,27 @@ Properties:
 
     jump meeting_in_progress if not is_timer_finished(0,"meeting_count")
 ## ^^^^^ Loop back while meeting is in progress
+### Keep looping until the meeting is ended
 
 # Meeting has adjourned
+# Ambassador leaves, 2 more enemies plus any left over from before 
 --- meeting_adjourned ---
     the_message = "Praetor of Peace is leaving.  Protect it until it gets clear of the asteroid field."
     await task_schedule(send_admiral_message, {"the_message": the_message})
 
 # Tell ambassador ship to move south i.e. leave
+# Set a target position to get to safe
     target_pos(amb_id, 0,0,-5200, 1.0, 0, 0)
 
-# spawn one more skarran to harass the player ship(s)
+# spawn one more wave skarran to harass the player ship(s)
     fleet_pos = Vec3(0,0,-2500)
     prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
     fleet_pos = Vec3(1000,0,-2500)
     prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
 
 # Watch for successful escape of the ambassador
+# i.e. it reaches the target position
+# Keep looping until they escape
 --- escaping ---
     await delay_sim(2)
 
@@ -252,9 +290,10 @@ Properties:
     fleet_pos = Vec3(0,0,-5200)
     ship_pos = Vec3(0,0,0)
     amb_obj = to_object(amb_id)
+## if you get an object it still exists
     if not amb_obj is None:
         ship_pos = amb_obj.pos
-
+## How close is it the the escape point
     diff = fleet_pos - ship_pos
     jump escaping if diff.length() > 400
 # ^^^^ If not loop back until it has escaped
@@ -266,6 +305,7 @@ Properties:
     await task_schedule(send_admiral_message, {"the_message": the_message})
 
 ## accelerate ship to "warp/leave"
+## New target point warp it out warp 50!
     amb_obj = to_object(amb_id)
     target_pos(amb_id, 0,0,-55200, 50, 0, 0)
     # win!
@@ -273,6 +313,7 @@ Properties:
     jump game_won
 
 # General Game lost handling
+# Called when game conditions from above fail
 --- game_lost ---
 
     #delay a bit
@@ -280,11 +321,12 @@ Properties:
     END_GAME_DELAY -= 1
     jump game_lost if END_GAME_DELAY > 0
 
-    # do the end screen
+## play music
+    sbs.play_music_file(0,"music/default/failure")
+## show the end screen by notifying the system
+## with a signal
     GAME_STARTED = False
     GAME_ENDED = True
-
-    sbs.play_music_file(0,"music/default/failure")
     signal_emit("show_game_results", None)
     ->END
 
@@ -296,15 +338,16 @@ Properties:
     END_GAME_DELAY -= 1
     jump game_won if END_GAME_DELAY > 0
 
-    # do the end screen
+## Play music
+    sbs.play_music_file(0,"music/default/victory")
+## show the end screen by notifying the system
+## with a signal
+
     START_TEXT = "The mission is complete, and Praetor of Peace escaped.  Congratuations!"
     GAME_STARTED = False
     GAME_ENDED = True
 
-    sbs.play_music_file(0,"music/default/victory")
     signal_emit("show_game_results", None)
-    #gui_reroute_clients(show_game_results)
-    #gui_reroute_server(show_game_results)
     ->END
 
 
