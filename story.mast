@@ -332,7 +332,6 @@ Properties:
 
 # General Game won handling
 --- game_won ---
-
     #delay a bit
     await delay_sim(2)
     END_GAME_DELAY -= 1
