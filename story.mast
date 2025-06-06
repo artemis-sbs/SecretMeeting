@@ -48,6 +48,13 @@ Properties:
     await task_schedule(spawn_players)
     await task_schedule(docking_standard_player_station)
 
+    player_object_set = to_object_list(role("__player__"))
+
+## Get the player ships name
+## It uses just the first ship if more than one 
+    player_obj = player_object_set[0]
+    player_name = player_obj.name
+
 
 ## big asteroid field
 
@@ -119,13 +126,7 @@ Properties:
 # Waiting for the ambassador ship to get 
 # close to the station (400m)
 
---- wait_for_arrival ---
-# wait for ambassador ship to get to its destination
-    dist = sbs.distance_id(phoenix_id, amb_id)
-    if dist > 400:
-        await delay_sim(5)
-        jump wait_for_arrival
-# ^^^^ It will loop back until the ships is near the station    
+    await distance_less(phoenix_id, amb_id, 400)
     
 ## when station is reached it picks up from here
     meeting_len = int(GAME_TIME_LIMIT)
@@ -137,24 +138,10 @@ Properties:
 
 ## spawn initial skarran attack
 ## 2 ships, 4 if difficulty is 11
-    fleet_diff = int(DIFFICULTY-1)
-
-
-## prefab_spawn creates calls a label
-## with the data passed
-## prefabs typically create one or more Agents
-## In this case a fleet
-    fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-    prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
-
-    fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-    prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
+    task_schedule(spawn_wave)
 ## More if difficulty 11
     if DIFFICULTY >= 11:
-        fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-        prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
-        fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-        prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
+        task_schedule(spawn_wave)
 ##  Calculate the time for the next wave
     seconds_between_waves = END_GAME_DELAY * 60
     milestone = meeting_len*60-seconds_between_waves
@@ -164,57 +151,22 @@ Properties:
 ## Now transition to a loop
 ## Watching for the meeting to end 
 ## or any end game conditions
---- meeting_in_progress ---
 
-    await delay_sim(5)
-## Wake up every 5 seconds to check this
+--- meeting_in_progress
+#
+# Pause and await any of these to happen
+#  - We have delayed long enough for the next wave
+#  - All players are destroyed
+#  - The ambassador ship is destroyed
+#  - The Phoenix station is destroyed
+
+    what = await delay_sim(seconds_between_waves) | destroyed_all(role("__player__")) | destroyed_any(amb_id) | destroyed_any(phoenix_id)
+
+    jump players_died if what[1]
+    jump ambassador_died if what[2]
+    jump station_died if what[3]
+
     seconds = get_time_remaining(0,"meeting_count")
-##
-## Important point: The function role
-## returns a set of ids of things with that role
-## roles are a fast way to ask questions
-## This scrip ask simple ones "all the player ships" 
-## i.e. role("__player__")
-##
-## These function convert things to a Agent objects
-##  to_object   - for a single id to and agent
-##  to_object_list - a list/set of IDs a list of agents
-##  Agent objects in this case SpaceObject agents
-    player_object_set = to_object_list(role("__player__"))
-## Check for end of game conditions
-## Failing these will end the game immediately
-##
-### do we still have players
-### So if the role function returned an empty set
-### There are no more players
-    if len(player_object_set) <=0:
-        the_message = "The TSN defenders have been destroyed!  God help the ambassador."
-        await task_schedule(send_admiral_message, {"the_message": the_message})
-## START_TEXT is a shared variable used by the start and end screen
-## kind of magic variable 
-        START_TEXT = "The TSN defenders have been destroyed."
-        jump game_lost
-
-## Get the player ships name
-## It uses just the first ship if more than one 
-    player_obj = player_object_set[0]
-    player_name = player_obj.name
-### do we still have ambassador's ship
-## object_exists is one way to see if the item is still around
-    if not object_exists(amb_id):
-        the_message = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
-        await task_schedule(send_admiral_message, {"the_message": the_message})
-        START_TEXT = "Praetor of Peace has been destroyed."
-        jump game_lost
-### do we still have the station
-
-    if not object_exists(phoenix_id):
-        the_message = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
-        await task_schedule(send_admiral_message, {"the_message": the_message})
-        START_TEXT = "Starbase Phoenix has been destroyed."
-        jump game_lost
-
-
 ## Is it time to launch a new wave of enemies
 ### every cycle 1/4 of total game time
 ### e.g. 20 minute game each wave is 5 minutes
@@ -225,10 +177,7 @@ Properties:
             await task_schedule(send_admiral_message, {"the_message": the_message})
 
 ##another skarran arrives
-        fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-        prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
-        fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
-        prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
+        task_schedule(spawn_wave)
 
         milestone -= seconds_between_waves
 
@@ -247,56 +196,21 @@ Properties:
     target_pos(amb_id, 0,0,-5200, 1.0, 0, 0)
 
 # spawn one more wave skarran to harass the player ship(s)
-    fleet_pos = Vec3(0,0,-2500)
-    prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
-    fleet_pos = Vec3(1000,0,-2500)
-    prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
-
+    task_schedule(spawn_wave)
 # Watch for successful escape of the ambassador
 # i.e. it reaches the target position
 # Keep looping until they escape
 --- escaping ---
-    await delay_sim(2)
+    what = await distance_point_less(amb_id, Vec3(0,0,-5200), 400) | destroyed_all(role("__player__")) | destroyed_any(amb_id) | destroyed_any(phoenix_id)
 
-## check for loss conditions
-### Do we still have players
-    player_object_set = to_object_list(role("__player__"))
-
-    if len(player_object_set) <=0:
-        the_message = "The TSN defenders have been destroyed!  God help the ambassador."
-        await task_schedule(send_admiral_message, {"the_message": the_message})
-        START_TEXT = "The TSN defenders have been destroyed."
-        jump game_lost
-
-    player_obj = player_object_set[0]
-    player_name = player_obj.name
-
-### Do we still have the ambassador ship
-    if not object_exists(amb_id):
-        the_message = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
-        await task_schedule(send_admiral_message, {"the_message": the_message})
-        START_TEXT = "Praetor of Peace has been destroyed."
-        jump game_lost
-
-### Do we still have the station
-    if not object_exists(phoenix_id):
-        the_message = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
-        await task_schedule(send_admiral_message, {"the_message": the_message})
-        START_TEXT = "Starbase Phoenix has been destroyed."
-        jump game_lost
-
-## Check where the ambassador is
-## have they escaped 
-    fleet_pos = Vec3(0,0,-5200)
-    ship_pos = Vec3(0,0,0)
-    amb_obj = to_object(amb_id)
-## if you get an object it still exists
-    if not amb_obj is None:
-        ship_pos = amb_obj.pos
-## How close is it the the escape point
-    diff = fleet_pos - ship_pos
-    jump escaping if diff.length() > 400
-# ^^^^ If not loop back until it has escaped
+# Pause and await any of these to happen
+#  - The ambassador escapes
+#  - All players are destroyed
+#  - The ambassador ship is destroyed
+#  - The Phoenix station is destroyed
+    jump players_died if what[1]
+    jump ambassador_died if what[2]
+    jump station_died if what[3]
 
 
 # ambassador ship is now far enough away from base
@@ -311,6 +225,26 @@ Properties:
     # win!
 
     jump game_won
+
+--- players_died
+    the_message = "The TSN defenders have been destroyed!  God help the ambassador."
+    await task_schedule(send_admiral_message, {"the_message": the_message})
+## START_TEXT is a shared variable used by the start and end screen
+## kind of magic variable 
+    START_TEXT = "The TSN defenders have been destroyed."
+    jump game_lost
+
+--- ambassador_died
+    the_message = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
+    await task_schedule(send_admiral_message, {"the_message": the_message})
+    START_TEXT = "Praetor of Peace has been destroyed."
+    jump game_lost
+
+--- station_died
+    the_message = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
+    await task_schedule(send_admiral_message, {"the_message": the_message})
+    START_TEXT = "Starbase Phoenix has been destroyed."
+    jump game_lost
 
 # General Game lost handling
 # Called when game conditions from above fail
@@ -379,4 +313,17 @@ Properties:
     for player in my_players:
         comms_message(the_message, phoenix_id, player.id, face=admiral_face, from_name=admiral_name)
 ## End this task 
+    ->END
+
+=== spawn_wave
+## prefab_spawn creates calls a label
+## with the data passed
+## prefabs typically create one or more Agents
+## In this case a fleet
+    fleet_diff = int(DIFFICULTY-1)
+
+    fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
+    prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
+    fleet_pos = Vec3.rand_in_sphere(3000, 5000, False, True)
+    prefab_spawn("prefab_fleet_raider", {"race": "skaraan", "fleet_difficulty": fleet_diff, "START_X": fleet_pos.x, "START_Y": fleet_pos.y, "START_Z": fleet_pos.x})
     ->END
