@@ -201,13 +201,13 @@ Properties:
 # spawn one more wave skarran to harass the player ship(s)
     task_schedule(spawn_wave)
 
-# Add a end game win conditions
-# i.e. it reaches the target position
-# Keep looping until they escape
-    game_end_condition_add(distance_point_less(amb_id, Vec3(0,0,-5200), 200), "The mission is complete, and Praetor of Peace escaped.  Congratuations!", True)
+    
 
 # This should trigger just before the end game
     await distance_point_less(amb_id, Vec3(0,0,-5200), 400)
+# Add a end game win conditions
+# i.e. it reaches the target position
+    game_end_condition_add(distance_point_greater(amb_id, Vec3(0,0,-5200), 500), "The mission is complete, and Praetor of Peace escaped.  Congratuations!", True)
 
 # ambassador ship is now far enough away from base
 ## Announce victory
