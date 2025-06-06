@@ -122,6 +122,12 @@ Properties:
 ## announcement from admiral
     await task_schedule(send_admiral_message, {"the_message": "The Praetor of Peace has arrived.  Escort it to the starbase."})
 
+
+# Add game ending conditions
+    game_end_condition_add(destroyed_all(role("__player__")), "The TSN defenders have been destroyed.", False)
+    game_end_condition_add(destroyed_any(amb_id),  "Praetor of Peace has been destroyed.", False)
+    game_end_condition_add(destroyed_any(phoenix_id), "Starbase Phoenix has been destroyed.", False)
+
 #######
 # Waiting for the ambassador ship to get 
 # close to the station (400m)
@@ -147,6 +153,7 @@ Properties:
     milestone = meeting_len*60-seconds_between_waves
     min_left = meeting_len
 
+
 ###########################
 ## Now transition to a loop
 ## Watching for the meeting to end 
@@ -160,11 +167,7 @@ Properties:
 #  - The ambassador ship is destroyed
 #  - The Phoenix station is destroyed
 
-    what = await delay_sim(seconds_between_waves) | destroyed_all(role("__player__")) | destroyed_any(amb_id) | destroyed_any(phoenix_id)
-
-    jump players_died if what[1]
-    jump ambassador_died if what[2]
-    jump station_died if what[3]
+    await delay_sim(seconds_between_waves)
 
     seconds = get_time_remaining(0,"meeting_count")
 ## Is it time to launch a new wave of enemies
@@ -197,21 +200,14 @@ Properties:
 
 # spawn one more wave skarran to harass the player ship(s)
     task_schedule(spawn_wave)
-# Watch for successful escape of the ambassador
+
+# Add a end game win conditions
 # i.e. it reaches the target position
 # Keep looping until they escape
---- escaping ---
-    what = await distance_point_less(amb_id, Vec3(0,0,-5200), 400) | destroyed_all(role("__player__")) | destroyed_any(amb_id) | destroyed_any(phoenix_id)
+    game_end_condition_add(distance_point_less(amb_id, Vec3(0,0,-5200), 200), "The mission is complete, and Praetor of Peace escaped.  Congratuations!", True)
 
-# Pause and await any of these to happen
-#  - The ambassador escapes
-#  - All players are destroyed
-#  - The ambassador ship is destroyed
-#  - The Phoenix station is destroyed
-    jump players_died if what[1]
-    jump ambassador_died if what[2]
-    jump station_died if what[3]
-
+# This should trigger just before the end game
+    await distance_point_less(amb_id, Vec3(0,0,-5200), 400)
 
 # ambassador ship is now far enough away from base
 ## Announce victory
@@ -224,63 +220,6 @@ Properties:
     target_pos(amb_id, 0,0,-55200, 50, 0, 0)
     # win!
 
-    jump game_won
-
---- players_died
-    the_message = "The TSN defenders have been destroyed!  God help the ambassador."
-    await task_schedule(send_admiral_message, {"the_message": the_message})
-## START_TEXT is a shared variable used by the start and end screen
-## kind of magic variable 
-    START_TEXT = "The TSN defenders have been destroyed."
-    jump game_lost
-
---- ambassador_died
-    the_message = f"{player_name} - Praetor of Peace has been destroyed!  Your mission is a failure."
-    await task_schedule(send_admiral_message, {"the_message": the_message})
-    START_TEXT = "Praetor of Peace has been destroyed."
-    jump game_lost
-
---- station_died
-    the_message = f"{player_name} - Starbase Phoenix has been destroyed!  Your mission is a failure."
-    await task_schedule(send_admiral_message, {"the_message": the_message})
-    START_TEXT = "Starbase Phoenix has been destroyed."
-    jump game_lost
-
-# General Game lost handling
-# Called when game conditions from above fail
---- game_lost ---
-
-    #delay a bit
-    await delay_sim(2)
-    END_GAME_DELAY -= 1
-    jump game_lost if END_GAME_DELAY > 0
-
-## play music
-    sbs.play_music_file(0,"music/default/failure")
-## show the end screen by notifying the system
-## with a signal
-    GAME_STARTED = False
-    GAME_ENDED = True
-    signal_emit("show_game_results", None)
-    ->END
-
-# General Game won handling
---- game_won ---
-    #delay a bit
-    await delay_sim(2)
-    END_GAME_DELAY -= 1
-    jump game_won if END_GAME_DELAY > 0
-
-## Play music
-    sbs.play_music_file(0,"music/default/victory")
-## show the end screen by notifying the system
-## with a signal
-
-    START_TEXT = "The mission is complete, and Praetor of Peace escaped.  Congratuations!"
-    GAME_STARTED = False
-    GAME_ENDED = True
-
-    signal_emit("show_game_results", None)
     ->END
 
 
