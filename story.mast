@@ -2,13 +2,19 @@
 # Remember the ID for phoenix stations
 #
 shared phoenix_id = None
+#
+# Life forms are NPCs they can be used in comms etc.
+#
+shared admiral = lifeform_spawn("Admiral Harkin", "ter #964b00 8 1;ter #968b00 3 0;ter #968b00 4 0;ter #968b00 5 2;ter #fff 3 5;ter #964b00 8 4;", "admiral")
 
 #
 # Set the Music and the sky box to use
 #
+# These are also executing labels, not data 
+# So define any common data before this
+#
 @media/music/default "Cosmos Default Music"
-
-@media/skybox/sky1-bored-alice "borealis"
+@media/skybox/sky-bored-alice "borealis"
 
 # The above set the music and skybox to specific values
 #
@@ -113,8 +119,6 @@ Properties:
 
 ## face of admiral and name
 ## shared make the value available to all tasks the server and all consoles
-    shared admiral_face =  "ter #964b00 8 1;ter #968b00 3 0;ter #968b00 4 0;ter #968b00 5 2;ter #fff 3 5;ter #964b00 8 4;"
-    shared admiral_name = "Admiral Harkin"
 
 ## tell it where to go (the station)
     target_pos(amb_id, 0,0,0, 1.0, 0, 200)
@@ -163,10 +167,6 @@ Properties:
 #
 # Pause and await any of these to happen
 #  - We have delayed long enough for the next wave
-#  - All players are destroyed
-#  - The ambassador ship is destroyed
-#  - The Phoenix station is destroyed
-
     await delay_sim(seconds_between_waves)
 
     seconds = get_time_remaining(0,"meeting_count")
@@ -238,19 +238,18 @@ Properties:
 ## Make sure we have a text line if it was forgotten
     default the_message = "Your forgot to set the the_message"
 ## send message to server screen
-    sbs.send_story_dialog(0, admiral_name, the_message, admiral_face, "#444")
+    sbs.send_story_dialog(0, admiral.name, the_message, admiral.face, "#444")
 
 ## get all main screens 
     main_screen_client_list = to_object_list(role("mainscreen") & role("console"))
 ## Loop through all main screens
     for c in main_screen_client_list:
         # print(c.client_id)
-        sbs.send_story_dialog(c.client_id, admiral_name, the_message, admiral_face, "#444")
+        sbs.send_story_dialog(c.client_id, admiral.name, the_message, admiral.face, "#444")
 
 ## send it to all comms players as well
     my_players = to_object_list(role("__player__") & role("tsn"))
-    for player in my_players:
-        comms_message(the_message, phoenix_id, player.id, face=admiral_face, from_name=admiral_name)
+    comms_message(the_message, my_players, admiral.id)
 ## End this task 
     ->END
 
