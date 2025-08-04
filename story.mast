@@ -238,14 +238,15 @@ Properties:
 ## Make sure we have a text line if it was forgotten
     default the_message = "Your forgot to set the the_message"
 ## send message to server screen
-    sbs.send_story_dialog(0, admiral.name, the_message, admiral.face, "#444")
+    face = get_face(admiral.id)
+    sbs.send_story_dialog(0, admiral.name, the_message, face, "#444")
 
 ## get all main screens 
     main_screen_client_list = to_object_list(role("mainscreen") & role("console"))
 ## Loop through all main screens
     for c in main_screen_client_list:
         # print(c.client_id)
-        sbs.send_story_dialog(c.client_id, admiral.name, the_message, admiral.face, "#444")
+        sbs.send_story_dialog(c.client_id, admiral.name, the_message, face, "#444")
 
 ## send it to all comms players as well
     my_players = to_object_list(role("__player__") & role("tsn"))
