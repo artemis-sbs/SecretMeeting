@@ -46,6 +46,11 @@ Properties:
 ## phoenix starbase 
     station_object = npc_spawn(0,0,0, "Starbase Phoenix", "tsn, station", "starbase_civil", "behav_station")
     phoenix_id = to_id(station_object)
+    set_inventory_value(phoenix_id, "HANGAR_ORIGIN_OVERRIDE", "ximni")
+    am = max(1,random.randint(0,10))
+    for x in range(0,am):
+        hangar_random_craft_spawn(phoenix_id)
+
 ## Station face for comms
     set_face(phoenix_id, random_terran(civilian=True)) 
 
