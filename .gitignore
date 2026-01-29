@@ -10,3 +10,5 @@
 /addons/
 /.addons/
 /media/**/*
+mast.compile.log
+mast.runtime.log
