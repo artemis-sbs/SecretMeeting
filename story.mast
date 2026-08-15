@@ -181,7 +181,10 @@ Properties:
 ## Announce the arrival
     await task_schedule(send_admiral_message, {"the_message": f"Praetor of Peace has docked.  The meeting should take {meeting_len} minutes.  Your mission is to protect it until then."})
 
-    set_timer(0, "meeting_count", minutes=meeting_len)
+## Let the timer say when it is done, rather than waiting to be asked.
+## The loop below only wakes on the wave cadence, so without this the meeting can
+## only END on a wave boundary - and the two clocks are independent settings.
+    set_timer(0, "meeting_count", minutes=meeting_len, signal="meeting_over")
 
 ## spawn initial skarran attack
 ## 2 ships, 4 if difficulty is 11
@@ -204,7 +207,13 @@ Properties:
 #
 # Pause and await any of these to happen
 #  - We have delayed long enough for the next wave
-    await delay_sim(seconds_between_waves)
+#  - The meeting is over
+#
+# Waiting on the wave delay ALONE meant the meeting could only end on a wave
+# boundary, and the wave gap is GAME_TIME_LIMIT // 4 of an operator-typed number:
+# a 25-minute meeting ran 30, a 45-minute one ran 55. The round numbers an author
+# tests (10, 15, 20, 40, 60) all divide evenly, which is why it never showed.
+    await promise_any(delay_sim(seconds_between_waves), signal_next("meeting_over"))
 
     seconds = get_time_remaining(0,"meeting_count")
 ## Is it time to launch a new wave of enemies
